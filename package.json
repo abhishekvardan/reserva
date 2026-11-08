@@ -1,0 +1,23 @@
+{
+  "name": "reserva",
+  "private": true,
+  "description": "Restaurant booking demo built on OpenDoor: Claude, ChatGPT and other AI agents can find restaurants and book tables with the user's permission.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "@abhishekvardanbotta/opendoor": "^0.1.0",
+    "@electric-sql/pglite": "^0.5.15",
+    "express": "^5.3.0",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2"
+  }
+}
