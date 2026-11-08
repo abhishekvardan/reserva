@@ -182,29 +182,29 @@ export function createApp() {
   app.post("/r/:slug/book", wrap(async (req, res) => {
     const user = await currentUser(req);
     const back = `/r/${encodeURIComponent(req.params.slug)}?date=${encodeURIComponent(req.body.date ?? "")}&party=${encodeURIComponent(req.body.party ?? "")}`;
-    if (!user) return res.redirect(`/login?next=${encodeURIComponent(back)}`);
+    if (!user) return res.redirect(303, `/login?next=${encodeURIComponent(back)}`);
     try {
       const b = await booking.createBooking(user.id, {
         restaurant: req.params.slug, date: String(req.body.date), time: String(req.body.time), party_size: Number(req.body.party), special_requests: String(req.body.requests ?? "").slice(0, 300),
       });
-      res.redirect(`/bookings?ok=${encodeURIComponent(`Booked ${b.restaurant.name}, ${b.when} for ${b.party_size}. Code ${b.code}.`)}`);
+      res.redirect(303, `/bookings?ok=${encodeURIComponent(`Booked ${b.restaurant.name}, ${b.when} for ${b.party_size}. Code ${b.code}.`)}`);
     } catch (err) {
       if (!(err instanceof booking.BookingError)) throw err;
-      res.redirect(`${back}&msg=${encodeURIComponent(err.message)}`);
+      res.redirect(303, `${back}&msg=${encodeURIComponent(err.message)}`);
     }
   }));
 
   app.get("/bookings", wrap(async (req, res) => {
     const user = await currentUser(req);
-    if (!user) return res.redirect("/login?next=/bookings");
+    if (!user) return res.redirect(303, "/login?next=/bookings");
     res.send(bookingsPage({ user, bookings: await booking.listBookings(user.id), flash: req.query.ok, base: baseUrl(req) }));
   }));
 
   app.post("/bookings/:code/cancel", wrap(async (req, res) => {
     const user = await currentUser(req);
-    if (!user) return res.redirect("/login?next=/bookings");
+    if (!user) return res.redirect(303, "/login?next=/bookings");
     const b = await booking.cancelBooking(user.id, req.params.code);
-    res.redirect(`/bookings?ok=${encodeURIComponent(`Cancelled ${b.restaurant.name}, ${b.when}.`)}`);
+    res.redirect(303, `/bookings?ok=${encodeURIComponent(`Cancelled ${b.restaurant.name}, ${b.when}.`)}`);
   }));
 
   app.get("/login", (req, res) => res.send(authPage({ mode: "login", next: safeNext(req.query.next) })));
@@ -221,7 +221,7 @@ export function createApp() {
       return res.status(401).send(authPage({ mode: "login", next: req.body.next, error: "Email or password is incorrect." }));
     }
     await startSession(res, u.id);
-    res.redirect(safeNext(req.body.next));
+    res.redirect(303, safeNext(req.body.next));
   }));
   app.post("/register", wrap(async (req, res) => {
     const name = String(req.body.name ?? "").trim().slice(0, 80);
@@ -235,12 +235,12 @@ export function createApp() {
     }
     const u = await db.one("INSERT INTO users (email, name, password_hash) VALUES ($1,$2,$3) RETURNING id", [email, name, hashPassword(password)]);
     await startSession(res, u.id);
-    res.redirect(safeNext(req.body.next));
+    res.redirect(303, safeNext(req.body.next));
   }));
   app.post("/logout", wrap(async (req, res) => {
     const raw = /(?:^|;\s*)rsv=([^;]+)/.exec(req.headers.cookie ?? "")?.[1];
     if (raw) await db.query("DELETE FROM sessions WHERE token_hash = $1", [sha(raw)]);
-    res.clearCookie("rsv", { path: "/" }).redirect("/");
+    res.clearCookie("rsv", { path: "/" }).redirect(303, "/");
   }));
 
   app.use((_req, res) => res.status(404).send(homePage404()));

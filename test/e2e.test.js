@@ -20,6 +20,7 @@ before(async () => {
   await new Promise((r) => server.once("listening", r));
   base = `http://localhost:${server.address().port}`;
   const res = await fetch(`${base}/login`, { method: "POST", redirect: "manual", headers: { "content-type": "application/x-www-form-urlencoded" }, body: "email=demo%40reserva.dev&password=demo1234&next=%2F" });
+  assert.equal(res.status, 303);
   cookie = res.headers.get("set-cookie").split(";")[0];
 });
 after(async () => {
@@ -40,7 +41,7 @@ test("website pages render and book like a normal site", async () => {
   const page = await (await fetch(`${base}/r/kumo-sushi?date=${tomorrow}&party=2`)).text();
   assert.match(page, /Chef&#39;s omakase/);
   const book = await fetch(`${base}/r/kumo-sushi/book`, { method: "POST", redirect: "manual", headers: { cookie, "content-type": "application/x-www-form-urlencoded" }, body: `date=${tomorrow}&party=2&time=19:00` });
-  assert.equal(book.status, 302);
+  assert.equal(book.status, 303); // POST → GET; Vercel defaults redirects to 307, which would re-POST
   assert.match(decodeURIComponent(book.headers.get("location")), /Booked Kumo Sushi/);
   const evil = await fetch(`${base}/r/kumo-sushi/book`, { method: "POST", headers: { cookie, origin: "https://evil.example", "content-type": "application/x-www-form-urlencoded" }, body: "x=1" });
   assert.equal(evil.status, 403);
